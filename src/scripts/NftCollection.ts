@@ -97,7 +97,7 @@ export class NftCollection {
         });
         console.log("Transaction sent successfully");
         return; // Exit if the transaction was successful
-      } catch (e) {
+      } catch (e: any) {
         console.error("Error sending transaction:", e.message);
 
         // Check if it's a rate limit error (status 429)

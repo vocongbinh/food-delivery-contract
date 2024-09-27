@@ -22,9 +22,6 @@ export async function uploadImageToFolder(file: string): Promise<string> {
   const options = {
     pinataMetadata: {
       name: "image.jpg", // Tên của file
-      keyvalues: {
-        folder: "images", // Tên thư mục ảo
-      }  
     },
   };
   const res = await pinata.pinFileToIPFS(readableStreamForFile , options);
