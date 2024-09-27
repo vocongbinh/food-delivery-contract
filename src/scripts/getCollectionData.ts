@@ -29,5 +29,6 @@ export async function getCollectionData() {
 	return nextItemIndex;
 }
 
-getCollectionData();
+
+// getCollectionData();
 

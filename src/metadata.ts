@@ -21,7 +21,7 @@ export async function uploadImageToFolder(file: string): Promise<string> {
   const readableStreamForFile = Readable.from(buffer)
   const options = {
     pinataMetadata: {
-      name: generateUniqueFilename("image", "jpg"), // Tên của file
+      name: "image.jpg", // Tên của file
       keyvalues: {
         folder: "images", // Tên thư mục ảo
       }  
@@ -31,6 +31,15 @@ export async function uploadImageToFolder(file: string): Promise<string> {
   return res.IpfsHash;
 }
 
+export async function uploadFolderToIPFS(folderPath: string): Promise<string> {
+  const pinata = new pinataSDK({
+    pinataApiKey: process.env.PINATA_API_KEY,
+    pinataSecretApiKey: process.env.PINATA_API_SECRET,
+  });
+
+  const response = await pinata.pinFromFS(folderPath);
+  return response.IpfsHash;
+}
 
 // export async function uploadImageToFolder(folderPath: string): Promise<string> {
 //   const pinata = new pinataSDK({

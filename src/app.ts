@@ -18,9 +18,11 @@ import path from "path";
 import { createReadStream } from "fs";
 import { writeFileSync } from "fs";
 import { deployItem } from "./scripts/deployNFT";
-import { uploadImageToFolder, uploadMetadata } from "./metadata";
+import { uploadFolderToIPFS, uploadImageToFolder, uploadMetadata } from "./metadata";
 import { readdir } from "fs/promises";
 import { openWallet } from "./utils";
+import { NftCollection } from "./scripts/NftCollection";
+import { Address } from "ton-core";
 dotenv.config();
 
 const app = express();
@@ -30,19 +32,23 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(cors());
 
+app.get("/nft-address/:index", async (req: Request, res: Response) => {
+  const index = BigInt(req.params.index);
+  const address = await NftCollection.getNftAddressByIndex(index);
+  res.json({address: address.toString()});
+} )
+
 app.post("/deploy-NFT", async (req: Request, res: Response) => {
   const data: Order = req.body;
-  const dishes = data.orderItems.map((orderItem) => {
+  const dishes = data.orderItems.map((orderItem, index) => {
     return {
-      trait_type: orderItem.dish.name,
-      value: {
-        quantity: orderItem.quantity,
-        price: orderItem.dish.price,
-      },
-    };
+      trait_type: orderItem.dish.name ,
+      value: `Price: ${orderItem.dish.price} x ${orderItem.quantity}`
+    }
   });
   const result = await uploadImageToFolder(data.image);
-  const image = `https://gateway.pinata.cloud/ipfs/${result}`;
+  const image = `ipfs://${result}`;
+
   const metaData = {
     name: v4(),
     description: "This is an order created on TON blockchain",
@@ -59,11 +65,13 @@ app.post("/deploy-NFT", async (req: Request, res: Response) => {
   const metaLink = await uploadMetadata(readableStreamForFile)
   console.log(metaData)
   console.log("meta link: ",metaLink)
-  await deployItem(`${metaData.name}.json`);
-   res.json({"message":metaData})
+  await deployItem(`${metaLink}`);
+   res.json({"message": "success"})
 });
 app.post("/deploy-collection", async (req: Request, res: Response) => {
   const wallet = await openWallet(process.env.MNEMONIC!.split(" "));
+  const metadataDirectory = path.join(__dirname, "../data/metadata");
+  const metadataIpfsHash = await uploadFolderToIPFS(metadataDirectory)
   const collectionData = {
     ownerAddress: wallet.contract.address,
     royaltyPercent: 0.05, // 0.05 = 5%
@@ -72,6 +80,11 @@ app.post("/deploy-collection", async (req: Request, res: Response) => {
     collectionContentUrl: `ipfs://${metadataIpfsHash}/collection.json`,
     commonContentUrl: `ipfs://`,
   };
+  const collection = new NftCollection(collectionData);
+  await collection.deploy(wallet);
+  console.log(`Collection deployed: ${collection.address}`);
+  res.json({"Collection deployed": collection.address});
+
 })
 app.post("/", (req: Request, res: Response) => {
   res.send("Hello, TypeScript with Express!");
