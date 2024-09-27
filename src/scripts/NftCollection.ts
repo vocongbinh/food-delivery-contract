@@ -8,7 +8,7 @@ import {
   SendMode,
   TupleItem,
 } from "ton-core";
-import { openWallet, encodeOffChainContent, OpenedWallet, nftCollectionAddress } from "../utils";
+import { openWallet, encodeOffChainContent, OpenedWallet, nftCollectionAddress, sleep } from "../utils";
 import { toncenter } from "./getCollectionData";
 export type collectionData = {
   ownerAddress: Address;
@@ -21,7 +21,7 @@ export type collectionData = {
 export type mintParams = {
   queryId: number | null ;
   itemOwnerAddress: Address;
-  itemIndex: number | bigint;
+  itemIndex: bigint;
   amount: bigint;
   commonContentUrl: string;
 };
@@ -78,7 +78,7 @@ export class NftCollection {
   }
   public async deploy(wallet: OpenedWallet) {
     const seqno = await wallet.contract.getSeqno();
-    console.log(seqno);
+    // await sleep(10000)
     const maxRetries = 5;
     const retryDelay = 1000;
     for (let attempt = 0; attempt < maxRetries; attempt++) {

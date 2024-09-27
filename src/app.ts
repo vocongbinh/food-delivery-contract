@@ -23,6 +23,7 @@ import { readdir } from "fs/promises";
 import { openWallet } from "./utils";
 import { NftCollection } from "./scripts/NftCollection";
 import { Address } from "ton-core";
+import { getWallet } from "./wallet";
 dotenv.config();
 
 const app = express();
@@ -69,7 +70,7 @@ app.post("/deploy-NFT", async (req: Request, res: Response) => {
    res.json({"message": "success"})
 });
 app.post("/deploy-collection", async (req: Request, res: Response) => {
-  const wallet = await openWallet(process.env.MNEMONIC!.split(" "));
+  const wallet = await getWallet()
   const metadataDirectory = path.join(__dirname, "../data/metadata");
   const metadataIpfsHash = await uploadFolderToIPFS(metadataDirectory)
   const collectionData = {
@@ -93,3 +94,5 @@ app.post("/", (req: Request, res: Response) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
+getWallet()

@@ -27,6 +27,7 @@ export async function 	getNextItem() {
 
 	return nextItemIndex;
 }
+export const sleep = (ms:number) => new Promise((resolve) => setTimeout(resolve, ms));
 function bufferToChunks(buff: Buffer, chunkSize: number) {
   const chunks: Buffer[] = [];
   while (buff.byteLength > 0) {

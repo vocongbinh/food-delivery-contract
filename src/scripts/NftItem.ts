@@ -1,7 +1,8 @@
 import { Address, beginCell, Cell, internal, SendMode, toNano } from "ton-core";
-import { OpenedWallet } from "../utils";
+import { OpenedWallet, sleep } from "../utils";
 import { NftCollection, createMintBody, mintParams } from "./NftCollection";
 import { TonClient } from "ton";
+import { nextTick } from "process";
 
 export class NftItem {
   private collection: Address;
@@ -12,16 +13,19 @@ export class NftItem {
 
   public async deploy(
     wallet: OpenedWallet,
-    params: mintParams
-  ): Promise<number> {
-     const maxRetries = 100;
-  const retryDelay = 10000; // 1 giây giữa mỗi lần thử lại
+    params: mintParams,
 
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
+  ): Promise<number> {
+  //    const maxRetries = 100 ;
+  // const retryDelay = 10000; // 1 giây giữa mỗi lần thử lại
+
+  // for (let attempt = 0; attempt < maxRetries; attempt++) {
+  //   try {
       // Đợi seqno trả về
+      await sleep(5000)
+
       const seqno = await wallet.contract.getSeqno();
-      console.log(seqno);
+      await sleep(5000)
       // Sau khi có seqno, gửi giao dịch
       await wallet.contract.sendTransfer({
         seqno,
@@ -35,28 +39,33 @@ export class NftItem {
         ],
         sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
       });
+      await sleep(10000)
+      const nftAddress = await NftCollection.getNftAddressByIndex(params.itemIndex)
+      console.log(nftAddress.toString())
+      const newOwner = Address.parse("0QD0uqZiQwMt2SfZo5OPo5xxr5yJRaZICJg4dKMi3DKTyfne")
+      await NftItem.transfer(wallet, nftAddress, newOwner)
 
-      console.log(`Transfer successful on attempt ${attempt + 1}`);
-      return 0; // Nếu thành công, thoát khỏi hàm
+  //     console.log(`Transfer successful on attempt ${attempt + 1}`);
+  //     return 0; // Nếu thành công, thoát khỏi hàm
 
-    } catch (e) {
-      if (e.response && e.response.status === 429) {
-        console.error(`Attempt ${attempt + 1} failed: Too many requests, retrying...`);
+  //   } catch (e) {
+  //     if (e.response && e.response.status === 429) {
+  //       console.error(`Attempt ${attempt + 1} failed: Too many requests, retrying...`);
 
-        // Đợi một thời gian trước khi thử lại nếu gặp lỗi 429
-        if (attempt < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-        } else {
-          console.error(`Failed after ${maxRetries} attempts`);
-          return -1; // Trả về lỗi sau số lần thử tối đa
-        }
+  //       // Đợi một thời gian trước khi thử lại nếu gặp lỗi 429
+  //       if (attempt < maxRetries - 1) {
+  //         await new Promise(resolve => setTimeout(resolve, retryDelay));
+  //       } else {
+  //         console.error(`Failed after ${maxRetries} attempts`);
+  //         return -1; // Trả về lỗi sau số lần thử tối đa
+  //       }
 
-      } else {
-        console.error(`Attempt ${attempt + 1} failed:`, e);
-        return -1; // Nếu lỗi khác không phải 429, thoát với lỗi
-      }
-    }
-  }
+  //     } else {
+  //       console.error(`Attempt ${attempt + 1} failed:`, e);
+  //       return -1; // Nếu lỗi khác không phải 429, thoát với lỗi
+  //     }
+  //   }
+  // }
 
  
   
@@ -101,8 +110,9 @@ export class NftItem {
     nftAddress: Address,
     newOwner: Address
   ): Promise<number> {
+    await sleep(5000)
     const seqno = await wallet.contract.getSeqno();
-
+    await sleep(5000)
     await wallet.contract.sendTransfer({
       seqno,
       secretKey: wallet.keyPair.secretKey,
