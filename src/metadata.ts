@@ -48,7 +48,7 @@ export async function uploadFolderToIPFS(folderPath: string): Promise<string> {
 //   return response.IpfsHash;
 // }
 
-export async function uploadMetadata(filePath: ReadStream): Promise<string> {
+export async function uploadMetadata(filePath:any): Promise<string> {
    const options = {
     pinataMetadata: {
       name: generateUniqueFilename("meta", "json"), // Tên của file
@@ -59,7 +59,7 @@ export async function uploadMetadata(filePath: ReadStream): Promise<string> {
     pinataSecretApiKey: process.env.PINATA_API_SECRET,
   });
 
-  const response = await pinata.pinFileToIPFS(filePath, options);
+  const response = await pinata.pinJSONToIPFS(filePath, options);
   return response.IpfsHash;
 }
 

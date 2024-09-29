@@ -10,7 +10,6 @@ import * as dotenv from "dotenv";
 // import { NftSale } from "./contracts/NftSale";
 import express, { Request, Response } from "express";
 import cors from "cors";
-import multer from "multer";
 import bodyParser = require("body-parser");
 import { Order } from "types/order";
 import { v4 } from "uuid";
@@ -28,7 +27,6 @@ dotenv.config();
 
 const app = express();
 const port = 3000;
-const upload = multer({ dest: "uploads/" });
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(cors());
@@ -56,14 +54,8 @@ app.post("/deploy-NFT", async (req: Request, res: Response) => {
     attributes: dishes,
     image,
   };
-  const metadataDirectory = path.join(__dirname, "../data/metadata");
-  const metadataFilePath = path.join(
-    metadataDirectory,
-    `${metaData.name}.json`
-  );
-  writeFileSync(metadataFilePath, JSON.stringify(metaData, null, 2), "utf8"); // Path to your .json file
-  const readableStreamForFile = createReadStream(metadataFilePath);
-  const metaLink = await uploadMetadata(readableStreamForFile)
+  const metaLink = await uploadMetadata(metaData)
+  
   console.log(metaData)
   console.log("meta link: ",metaLink)
   await deployItem(`${metaLink}`);
