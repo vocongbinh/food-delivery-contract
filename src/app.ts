@@ -29,7 +29,13 @@ const app = express();
 const port = 3000;
 app.use(bodyParser.json());
 app.use(express.json());
-app.use(cors());
+app.use(cors(
+  {
+    origin: "*", 
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}
+));
 
 app.get("/nft-address/:index", async (req: Request, res: Response) => {
   const index = BigInt(req.params.index);
