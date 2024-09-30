@@ -14,6 +14,7 @@ export class NftItem {
   public async deploy(
     wallet: OpenedWallet,
     params: mintParams,
+    destAddress: string
 
   ): Promise<number> {
   //    const maxRetries = 100 ;
@@ -42,7 +43,7 @@ export class NftItem {
       await sleep(10000)
       const nftAddress = await NftCollection.getNftAddressByIndex(params.itemIndex)
       console.log(nftAddress.toString())
-      const newOwner = Address.parse("0QD0uqZiQwMt2SfZo5OPo5xxr5yJRaZICJg4dKMi3DKTyfne")
+      const newOwner = Address.parse(destAddress)
       await NftItem.transfer(wallet, nftAddress, newOwner)
 
   //     console.log(`Transfer successful on attempt ${attempt + 1}`);

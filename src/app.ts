@@ -43,8 +43,9 @@ app.get("/nft-address/:index", async (req: Request, res: Response) => {
   res.json({address: address.toString()});
 } )
 
-app.post("/deploy-NFT", async (req: Request, res: Response) => {
+app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
   const data: Order = req.body;
+  const address = req.params.address;
   const dishes = data.orderItems.map((orderItem, index) => {
     return {
       trait_type: orderItem.dish.name ,
@@ -57,14 +58,27 @@ app.post("/deploy-NFT", async (req: Request, res: Response) => {
   const metaData = {
     name: v4(),
     description: "This is an order created on TON blockchain",
-    attributes: dishes,
+    attributes: [
+      {
+        trait_type: "Name",
+        value: data.name,
+      },
+      {
+        trait_type: "Address",
+        value: data.address,
+      },
+      {
+        trait_type: "Phone",
+        value: data.phone,
+      },
+      ...dishes],
     image,
   };
   const metaLink = await uploadMetadata(metaData)
   
   console.log(metaData)
   console.log("meta link: ",metaLink)
-  await deployItem(`${metaLink}`);
+  await deployItem(`${metaLink}`, address);
    res.json({"message": "success"})
 });
 app.post("/deploy-collection", async (req: Request, res: Response) => {

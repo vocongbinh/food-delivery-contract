@@ -11,7 +11,7 @@ import { mintParams, NftCollection } from "./NftCollection";
 import { NftItem } from "./NftItem";
 import { getWallet } from "../wallet";
 export const collectionAddress = Address.parse("kQB-gihgMvh2R-2tlZjaCEWw8-wPQKFsL0XW60QIby10MTYe")
-export async function deployItem(commonContentUrl: string,  ) { 
+export async function deployItem(commonContentUrl: string, destAddress: string ) { 
     ////////////////////////////////////const wallet = await openWallet(process.env.MNEMONIC!.split(" "));/// collect data here ////////////////////////////////////////////
     const wallet = await getWallet()
     // 1) Your address - NFT will store owner address, so be the owner!!
@@ -34,7 +34,7 @@ export async function deployItem(commonContentUrl: string,  ) {
     } 
     const nftItem = new NftItem(collectionAddress);
 
-    await nftItem.deploy(wallet, params);
+    await nftItem.deploy(wallet, params, destAddress);
     
 
 
