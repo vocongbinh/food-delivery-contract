@@ -1,10 +1,10 @@
-import pinataSDK from "@pinata/sdk";
+import pinataSDK, { PinataPinOptions } from "@pinata/sdk";
 import axios from "axios";
 import { readdirSync, createReadStream, unlinkSync, ReadStream } from "fs";
 import { writeFile, readFile } from "fs/promises";
 import path from "path";
 import { Readable } from "stream";
-
+const sharp = require("sharp")
 function generateUniqueFilename(baseName: string, extension: string) {
   const timestamp = Date.now();
   const randomNumber = Math.floor(Math.random() * 9000) + 1000;
@@ -18,10 +18,18 @@ export async function uploadImageToFolder(file: string): Promise<string> {
   });
   const response = await axios.get(file, { responseType: 'arraybuffer' });
   const buffer = Buffer.from(response.data);
+  const resizeBuffer = await sharp(buffer)
+        .resize(300, 300, {
+            fit: 'inside', 
+        }).toBuffer()
   const readableStreamForFile = Readable.from(buffer)
-  const options = {
+  console.log(resizeBuffer)
+  const options:PinataPinOptions = {
     pinataMetadata: {
-      name: "image.jpg", // Tên của file
+      name: "image.jpg", 
+    },
+    pinataOptions: {
+      cidVersion: 0, 
     },
   };
   const res = await pinata.pinFileToIPFS(readableStreamForFile , options);

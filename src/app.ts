@@ -46,14 +46,17 @@ app.get("/nft-address/:index", async (req: Request, res: Response) => {
 app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
   const data: Order = req.body;
   const address = req.params.address;
+  const imagesFolderPath = path.join(__dirname, "../data/images");
+  
   const dishes = data.orderItems.map((orderItem, index) => {
     return {
       trait_type: orderItem.dish.name ,
       value: `Price: ${orderItem.dish.price} x ${orderItem.quantity}`
     }
   });
-  const result = await uploadImageToFolder(data.image);
-  const image = `ipfs://${result}`;
+  console.log("Started uploading images to IPFS...");
+  const imagesIpfsHash = await uploadFolderToIPFS(imagesFolderPath);
+  const image = `ipfs://${imagesIpfsHash}/dish.jpg`;
 
   const metaData = {
     name: v4(),
