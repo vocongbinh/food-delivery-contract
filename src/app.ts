@@ -27,8 +27,6 @@ dotenv.config();
 
 const app = express();
 const port = 3000;
-app.use(bodyParser.json());
-app.use(express.json());
 app.use(cors(
   {
     origin: "*", 
@@ -36,6 +34,9 @@ app.use(cors(
     allowedHeaders: ["Content-Type", "Authorization"]
 }
 ));
+app.use(bodyParser.json());
+app.use(express.json());
+
 
 app.get("/nft-address/:index", async (req: Request, res: Response) => {
   const index = BigInt(req.params.index);
