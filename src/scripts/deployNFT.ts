@@ -10,7 +10,7 @@ import { getNextItem, openWallet } from "../utils";
 import { mintParams, NftCollection } from "./NftCollection";
 import { NftItem } from "./NftItem";
 import { getWallet } from "../wallet";
-export const collectionAddress = Address.parse("kQB-gihgMvh2R-2tlZjaCEWw8-wPQKFsL0XW60QIby10MTYe")
+export const collectionAddress = Address.parse("EQBQJeJuna9qDQEvDLEVamTSnhemKlMa4N2eJUZX6EBwVpZ4")
 export async function deployItem(commonContentUrl: string, destAddress: string ) { 
     ////////////////////////////////////const wallet = await openWallet(process.env.MNEMONIC!.split(" "));/// collect data here ////////////////////////////////////////////
     const wallet = await getWallet()

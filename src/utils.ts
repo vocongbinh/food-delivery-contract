@@ -1,7 +1,7 @@
 import { TonClient, WalletContractV4 } from 'ton';
 import { Address, beginCell, Cell, OpenedContract } from 'ton-core';
 import { KeyPair, mnemonicToPrivateKey } from 'ton-crypto';
-export const nftCollectionAddress = Address.parse('kQB-gihgMvh2R-2tlZjaCEWw8-wPQKFsL0XW60QIby10MTYe');
+export const nftCollectionAddress = Address.parse('EQBQJeJuna9qDQEvDLEVamTSnhemKlMa4N2eJUZX6EBwVpZ4');
 //https://testnet.explorer.tonnft.tools/collection/EQDf6HCOggN_ZGL6YsYleN6mDiclQ_NJOMY-x8G5cTRDOBW4
 const toncenterBaseEndpoint: string = "https://testnet.toncenter.com";
 

@@ -9,6 +9,7 @@ import * as dotenv from "dotenv";
 // import { NftMarketplace } from "./contracts/NftMarketplace";
 // import { NftSale } from "./contracts/NftSale";
 import express, { Request, Response } from "express";
+import { JettonMaster, TonClient } from "ton";
 import cors from "cors";
 import bodyParser = require("body-parser");
 import { Order } from "types/order";
@@ -17,43 +18,65 @@ import path from "path";
 import { createReadStream } from "fs";
 import { writeFileSync } from "fs";
 import { deployItem } from "./scripts/deployNFT";
-import { uploadFolderToIPFS, uploadImageToFolder, uploadMetadata } from "./metadata";
+import {
+  uploadFolderToIPFS,
+  uploadImageToFolder,
+  uploadMetadata,
+} from "./metadata";
 import { readdir } from "fs/promises";
-import { openWallet } from "./utils";
+import { openWallet, sleep } from "./utils";
 import { NftCollection } from "./scripts/NftCollection";
-import { Address } from "ton-core";
+import { Address, beginCell, Cell, internal, SendMode, toNano } from "ton-core";
+import { Address as Address2, Sender } from "@ton/core";
 import { getWallet } from "./wallet";
+import {
+  AssetsSDK,
+  createApi,
+  createSender,
+  importKey,
+  JettonWallet,
+} from "@ton-community/assets-sdk";
+import TonWeb from "tonweb";
+import { Maybe } from "ton-core/dist/utils/maybe";
+import { Jetton } from "./scripts/jetton";
 dotenv.config();
-
 const app = express();
 const port = 3000;
-app.use(cors(
-  {
-    origin: "*", 
+app.use(
+  cors({
+    origin: "*",
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-}
-));
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(bodyParser.json());
 app.use(express.json());
-
-
+const tonweb = new TonWeb(
+  new TonWeb.HttpProvider("https://testnet.toncenter.com/api/v2/jsonRPC", {
+    apiKey: process.env.TONCENTER_API_KEY,
+  })
+);
+const client = new TonClient({
+  endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC", // URL của node TON
+  apiKey: process.env.TONCENTER_API_KEY // API key nếu cần thiết
+});
+console.log("key", process.env.TONCENTER_API_KEY);
 app.get("/nft-address/:index", async (req: Request, res: Response) => {
   const index = BigInt(req.params.index);
   const address = await NftCollection.getNftAddressByIndex(index);
-  res.json({address: address.toString()});
-} )
+  res.json({ address: address.toString() });
+});
 
 app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
   const data: Order = req.body;
   const address = req.params.address;
   const imagesFolderPath = path.join(__dirname, "../data/images");
-  
+
   const dishes = data.orderItems.map((orderItem, index) => {
     return {
-      trait_type: orderItem.dish.name ,
-      value: `Price: ${orderItem.dish.price} x ${orderItem.quantity}`
-    }
+      trait_type: orderItem.dish.name,
+      value: `Price: ${orderItem.dish.price} x ${orderItem.quantity}`,
+    };
   });
   console.log("Started uploading images to IPFS...");
   const imagesIpfsHash = await uploadFolderToIPFS(imagesFolderPath);
@@ -75,20 +98,21 @@ app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
         trait_type: "Phone",
         value: data.phone,
       },
-      ...dishes],
+      ...dishes,
+    ],
     image,
   };
-  const metaLink = await uploadMetadata(metaData)
-  
-  console.log(metaData)
-  console.log("meta link: ",metaLink)
+  const metaLink = await uploadMetadata(metaData);
+
+  console.log(metaData);
+  console.log("meta link: ", metaLink);
   await deployItem(`${metaLink}`, address);
-   res.json({"message": "success"})
+  res.json({ message: "success" });
 });
 app.post("/deploy-collection", async (req: Request, res: Response) => {
-  const wallet = await getWallet()
+  const wallet = await getWallet();
   const metadataDirectory = path.join(__dirname, "../data/metadata");
-  const metadataIpfsHash = await uploadFolderToIPFS(metadataDirectory)
+  const metadataIpfsHash = await uploadFolderToIPFS(metadataDirectory);
   const collectionData = {
     ownerAddress: wallet.contract.address,
     royaltyPercent: 0.05, // 0.05 = 5%
@@ -100,15 +124,70 @@ app.post("/deploy-collection", async (req: Request, res: Response) => {
   const collection = new NftCollection(collectionData);
   await collection.deploy(wallet);
   console.log(`Collection deployed: ${collection.address}`);
-  res.json({"Collection deployed": collection.address});
-
-})
-app.post("/", (req: Request, res: Response) => {
+  res.json({ "Collection deployed": collection.address });
+});
+app.get("/", (req: Request, res: Response) => {
   res.send("Hello, TypeScript with Express!");
+});
+
+app.post("/send-jetton/:address", async (req: Request, res: Response) => {
+  const address = req.params.address;
+  const wallet = await getWallet();
+  const seqno = await wallet.contract.getSeqno();
+  console.log(seqno);
+  await sleep(5000);
+  await wallet.contract.sendTransfer({
+    seqno,
+    secretKey: wallet.keyPair.secretKey,
+    messages: [
+      internal({
+        value: "0.05",
+        to: Address.parse("kQAoj7j8Sy0enWZcjy6Je7G_ixzlCh2QaCThAv67vOkEGAbk"),
+        body: Jetton.createTransferBody({
+          newOwner: Address.parse(address),
+          amount: toNano(1),
+          forwardAmount: toNano(0.05),
+          responseTo: wallet.contract.address,
+        }),
+      }),
+    ],
+    sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
+  });
+  res.json({ message: "success" });
+});
+
+app.post("/exchange-jetton/:address", async (req: Request, res: Response) => {
+  const address = req.params.address;
+  const jettonMaster = new JettonMaster(Address.parse("kQAoj7j8Sy0enWZcjy6Je7G_ixzlCh2QaCThAv67vOkEGAbk"))
+  const wallet = await getWallet();
+
+  const jettonWallet = await client.open(jettonMaster).getWalletAddress(Address.parse("0QAmzEMTk3SIjRAbMeJWDFYLNwkXp4P2Fu8iH0Pik5KOQUpJ"))
+  res.json({"jetton wallet": jettonWallet.toString()})
+  // const seqno = await wallet.contract.getSeqno();
+  // console.log(seqno); // 0
+  // await sleep(5000);
+  // await wallet.contract.sendTransfer({
+  //   seqno,
+  //   secretKey: wallet.keyPair.secretKey,
+  //   messages: [
+  //     internal({
+  //       value: "0.05",
+  //       to: Address.parse("kQAoj7j8Sy0enWZcjy6Je7G_ixzlCh2QaCThAv67vOkEGAbk"),
+  //       body: Jetton.createExchangeBody({
+  //         newOwner: Address.parse(address),
+  //         amount: toNano(1),
+  //         forwardAmount: toNano(0.05),
+  //         responseTo: wallet.contract.address,
+  //       }),
+  //     }),
+  //   ],
+  //   sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
+  // });
+  // res.json({ message: "success" });
 });
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
 
-getWallet()
+getWallet();

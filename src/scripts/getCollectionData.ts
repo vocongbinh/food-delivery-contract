@@ -5,7 +5,7 @@ export const toncenter = new TonClient({
 	endpoint: 'https://testnet.toncenter.com/api/v2/jsonRPC',
 });
 
-export const nftCollectionAddress = Address.parse('kQA3RqroE0WYHRXxOs8-itFoOavCGjIto48EQFLYLTz5-iAo');
+export const nftCollectionAddress = Address.parse('EQBQJeJuna9qDQEvDLEVamTSnhemKlMa4N2eJUZX6EBwVpZ4');
 //https://testnet.explorer.tonnft.tools/collection/EQDf6HCOggN_ZGL6YsYleN6mDiclQ_NJOMY-x8G5cTRDOBW4
 
 
