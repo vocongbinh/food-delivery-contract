@@ -45,10 +45,11 @@ const port = 3000;
 app.use(
   cors({
     origin: "*",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+app.options('*', cors());
 app.use(bodyParser.json());
 app.use(express.json());
 const tonweb = new TonWeb(
