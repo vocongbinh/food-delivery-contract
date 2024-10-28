@@ -55,6 +55,11 @@ app.options('*',  (req, res) => {
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.sendStatus(200);
 } );
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 app.use(bodyParser.json());
 app.use(express.json());
 const tonweb = new TonWeb(
@@ -132,15 +137,12 @@ app.post("/deploy-collection", async (req: Request, res: Response) => {
   console.log(`Collection deployed: ${collection.address}`);
   res.json({ "Collection deployed": collection.address });
 });
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello, TypeScript with Express!");
-});
 
 app.post("/send-jetton/:address", async (req: Request, res: Response) => {
   const address = req.params.address;
   const wallet = await getWallet();
   const seqno = await wallet.contract.getSeqno();
-  console.log(seqno);
+  console.log(seqno);''
   await sleep(5000);
   await wallet.contract.sendTransfer({
     seqno,
@@ -191,6 +193,12 @@ app.post("/exchange-jetton/:address", async (req: Request, res: Response) => {
   // });
   // res.json({ message: "success" });
 });
+
+
+app.get("/", (req: Request, res: Response) => {
+  res.send("Hello, TypeScript with Express!");
+});
+
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
