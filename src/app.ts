@@ -167,11 +167,11 @@ app.post("/send-jetton/:address", async (req: Request, res: Response) => {
   }
   catch(e) {
     console.log(e);
-    res.json({message: "error"})
+    return res.json({message: "error"})
   }
   console.log("send jetton success")
  
-  res.json({ message: "success" });
+ return res.json({ message: "success" });
 });
 
 app.post("/exchange-jetton/:address", async (req: Request, res: Response) => {
