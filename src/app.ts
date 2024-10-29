@@ -144,23 +144,30 @@ app.post("/send-jetton/:address", async (req: Request, res: Response) => {
   const seqno = await wallet.contract.getSeqno();
   console.log(seqno);''
   await sleep(5000);
-  await wallet.contract.sendTransfer({
-    seqno,
-    secretKey: wallet.keyPair.secretKey,
-    messages: [
-      internal({
-        value: "0.05",
-        to: Address.parse("kQAoj7j8Sy0enWZcjy6Je7G_ixzlCh2QaCThAv67vOkEGAbk"),
-        body: Jetton.createTransferBody({
-          newOwner: Address.parse(address),
-          amount: toNano(1),
-          forwardAmount: toNano(0.05),
-          responseTo: wallet.contract.address,
+  try {
+    await wallet.contract.sendTransfer({
+      seqno,
+      secretKey: wallet.keyPair.secretKey,
+      messages: [
+        internal({
+          value: "0.05",
+          to: Address.parse("kQAoj7j8Sy0enWZcjy6Je7G_ixzlCh2QaCThAv67vOkEGAbk"),
+          body: Jetton.createTransferBody({
+            newOwner: Address.parse(address),
+            amount: toNano(1),
+            forwardAmount: toNano(0.05),
+            responseTo: wallet.contract.address,
+          }),
         }),
-      }),
-    ],
-    sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
-  });
+      ],
+      sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
+    });
+  }
+  catch(e) {
+    console.log(e);
+    res.json({message: "error"})
+  }
+ 
   res.json({ message: "success" });
 });
 
