@@ -144,6 +144,7 @@ app.post("/send-jetton/:address", async (req: Request, res: Response) => {
   const seqno = await wallet.contract.getSeqno();
   console.log(seqno);''
   await sleep(5000);
+  console.log('haha')
   try {
     await wallet.contract.sendTransfer({
       seqno,
@@ -167,6 +168,7 @@ app.post("/send-jetton/:address", async (req: Request, res: Response) => {
     console.log(e);
     res.json({message: "error"})
   }
+  console.log("send jetton success")
  
   res.json({ message: "success" });
 });
