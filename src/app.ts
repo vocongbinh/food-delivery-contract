@@ -141,6 +141,7 @@ app.post("/deploy-collection", async (req: Request, res: Response) => {
 app.post("/send-jetton/:address", async (req: Request, res: Response) => {
   const address = req.params.address;
   const wallet = await getWallet();
+  await sleep(5000);
   const seqno = await wallet.contract.getSeqno();
   console.log(seqno);''
   await sleep(5000);
