@@ -146,9 +146,10 @@ app.post("/send-jetton/:address", async (req: Request, res: Response) => {
   console.log(seqno);''
   await sleep(5000);
   console.log('haha')
+  
   try {
     await wallet.contract.sendTransfer({
-      seqno,
+      seqno: seqno + 1,
       secretKey: wallet.keyPair.secretKey,
       messages: [
         internal({

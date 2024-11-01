@@ -22,7 +22,7 @@ export async function deployItem(commonContentUrl: string, destAddress: string )
     //take next Item  
     
     const itemIndex = await getNextItem();
-    console.log(commonContentUrl)
+    console.log("commonContentUrl",commonContentUrl)
     // no image just json
   
     const params:mintParams= {
