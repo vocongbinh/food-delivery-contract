@@ -143,7 +143,7 @@ app.post("/send-jetton/:address", async (req: Request, res: Response) => {
   const wallet = await getWallet();
   await sleep(5000);
   const seqno = await wallet.contract.getSeqno();
-  console.log(seqno);''
+  console.log(seqno);
   await sleep(5000);
   console.log('haha')
   
