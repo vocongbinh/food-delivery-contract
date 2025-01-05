@@ -56,6 +56,8 @@ export async function uploadFolderToIPFS(folderPath: string): Promise<string> {
 //   return response.IpfsHash;
 // }
 
+
+
 export async function uploadMetadata(filePath:any): Promise<string> {
    const options = {
     pinataMetadata: {
