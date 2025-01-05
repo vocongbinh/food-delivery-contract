@@ -24,7 +24,7 @@ import {
   uploadMetadata,
 } from "./metadata";
 import { readdir } from "fs/promises";
-import { openWallet, sleep } from "./utils";
+import { generateOrderId, openWallet, sleep } from "./utils";
 import { NftCollection } from "./scripts/NftCollection";
 import { Address, beginCell, Cell, internal, SendMode, toNano } from "ton-core";
 import { Address as Address2, Sender } from "@ton/core";
@@ -103,7 +103,7 @@ app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
   // const image = `ipfs://${imagesIpfsHash}/dish.jpg`;
 
   const metaData = {
-    name: v4(),
+    name: generateOrderId(),
     description: "This is an order created on TON blockchain",
     attributes: [
       {

@@ -82,3 +82,8 @@ export async function openWallet(mnenonics: string[]) {
 	return {contract, keyPair}
   }
 
+export function generateOrderId() {
+	const timestamp = Date.now(); // Lấy thời gian hiện tại
+	const random = Math.floor(Math.random() * 1000); // Số ngẫu nhiên
+	return `ORD-${timestamp}-${random}`; // Kết hợp
+  }
