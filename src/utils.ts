@@ -87,3 +87,13 @@ export function generateOrderId() {
 	const random = Math.floor(Math.random() * 1000); // Số ngẫu nhiên
 	return `ORD-${timestamp}-${random}`; // Kết hợp
   }
+
+export function formatDate(dateString: string | Date) {
+	const date = new Date(dateString);
+	const options: Intl.DateTimeFormatOptions = {
+	  year: "numeric",
+	  month: "long",
+	  day: "numeric",
+	};
+	return date.toLocaleDateString("en-US", options);
+  }

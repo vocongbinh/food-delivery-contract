@@ -24,7 +24,7 @@ import {
   uploadMetadata,
 } from "./metadata";
 import { readdir } from "fs/promises";
-import { generateOrderId, openWallet, sleep } from "./utils";
+import { formatDate, generateOrderId, openWallet, sleep } from "./utils";
 import { NftCollection } from "./scripts/NftCollection";
 import { Address, beginCell, Cell, internal, SendMode, toNano } from "ton-core";
 import { Address as Address2, Sender } from "@ton/core";
@@ -113,6 +113,10 @@ app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
       {
         trait_type: "Address",
         value: data.address,
+      },
+      {
+        trait_type: "Created At",
+        value: formatDate(new Date()),
       },
       {
         trait_type: "Phone",
