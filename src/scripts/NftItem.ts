@@ -23,10 +23,10 @@ export class NftItem {
   // for (let attempt = 0; attempt < maxRetries; attempt++) {
   //   try {
       // Đợi seqno trả về
-      await sleep(5000)
+      await sleep(3000)
 
       const seqno = await wallet.contract.getSeqno();
-      await sleep(5000)
+      await sleep(3000)
       // Sau khi có seqno, gửi giao dịch
       await wallet.contract.sendTransfer({
         seqno,
@@ -111,9 +111,9 @@ export class NftItem {
     nftAddress: Address,
     newOwner: Address
   ): Promise<number> {
-    await sleep(5000)
+    await sleep(3000)
     const seqno = await wallet.contract.getSeqno();
-    await sleep(5000)
+    await sleep(3000)
     await wallet.contract.sendTransfer({
       seqno,
       secretKey: wallet.keyPair.secretKey,

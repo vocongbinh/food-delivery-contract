@@ -1,0 +1,133 @@
+#include "imports/stdlib.fc";
+
+;; Storage TL-B scheme
+;; storage#_ owner:MsgAddressInt customer:MsgAddressInt order_id:^Cell name:^Cell image:^Cell quantity:uint32 total_price:Coins status:uint8 = Storage;
+
+;; Order status constants
+const int PENDING = 0;
+const int DELIVERING = 1; 
+const int DELIVERED = 2;
+const int CANCELED = 3;
+
+;; Operation codes
+const int OP_UPDATE_STATUS = 1;
+const int OP_UPDATE_QUANTITY = 2;
+const int OP_UPDATE_PRICE = 3;
+
+;; Error codes
+const int ERROR_NOT_AUTHORIZED = 101;
+const int ERROR_INVALID_STATUS = 102;
+const int ERROR_OWNER_ONLY = 103;
+const int ERROR_INVALID_QUANTITY = 104;
+const int ERROR_INVALID_PRICE = 105;
+
+;; Load storage
+(slice, slice, cell, cell, cell, int, int, int) load_data() inline {
+    var ds = get_data().begin_parse();
+    return (
+        ds~load_msg_addr(),    ;; owner
+        ds~load_msg_addr(),    ;; customer  
+        ds~load_ref(),         ;; order_id
+        ds~load_ref(),         ;; name
+        ds~load_ref(),         ;; image
+        ds~load_uint(32),      ;; quantity
+        ds~load_coins(),       ;; total_price
+        ds~load_uint(8)        ;; status
+    );
+}
+
+;; Save storage 
+() save_data(slice owner, slice customer, cell order_id, cell name, cell image, int quantity, int total_price, int status) impure inline {
+    set_data(begin_cell()
+        .store_slice(owner)
+        .store_slice(customer)
+        .store_ref(order_id)
+        .store_ref(name)
+        .store_ref(image)
+        .store_uint(quantity, 32)
+        .store_coins(total_price)
+        .store_uint(status, 8)
+        .end_cell()
+    );
+}
+
+;; Check if sender is authorized (owner or customer)
+(int) is_authorized(slice sender, slice owner, slice customer) inline {
+    return equal_slices(sender, owner) | equal_slices(sender, customer);
+}
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    ;; Parse sender address
+    var cs = in_msg_full.begin_parse();
+    var flags = cs~load_uint(4);
+    var sender = cs~load_msg_addr();
+    
+    ;; Load contract data
+    var (owner, customer, order_id, name, image, quantity, total_price, status) = load_data();
+
+    ;; If contract is not initialized yet
+     if (equal_slices(customer, owner)) {
+        ;; Initialize contract data
+        slice new_owner = in_msg_body~load_msg_addr();
+        slice new_customer = sender;
+        cell new_order_id = in_msg_body~load_ref();
+        cell new_name = in_msg_body~load_ref();
+        cell new_image = in_msg_body~load_ref();
+        int new_quantity = in_msg_body~load_uint(32);
+        int new_price = in_msg_body~load_coins();
+        
+        ;; Validate inputs
+        throw_unless(ERROR_INVALID_QUANTITY, new_quantity > 0);
+        throw_unless(ERROR_INVALID_PRICE, new_price > 0);
+        
+        ;; Save initial data
+        save_data(new_owner, new_customer, new_order_id, new_name, new_image, new_quantity, new_price, PENDING);
+        return ();
+    }
+    
+    ;; Check authorization for existing contract
+    throw_unless(ERROR_NOT_AUTHORIZED, is_authorized(sender, owner, customer));
+    
+    ;; Parse op
+    int op = in_msg_body~load_uint(32);
+    
+    ;; Handle operations
+    if (op == OP_UPDATE_STATUS) { ;; Update status
+        int new_status = in_msg_body~load_uint(8);
+        throw_unless(ERROR_INVALID_STATUS, new_status <= CANCELED);
+        save_data(owner, customer, order_id, name, image, quantity, total_price, new_status);
+        return ();
+    }
+    
+    if (op == OP_UPDATE_QUANTITY) { ;; Update quantity (owner only)
+        throw_unless(ERROR_OWNER_ONLY, equal_slices(sender, owner));
+        int new_quantity = in_msg_body~load_uint(32);
+        throw_unless(ERROR_INVALID_QUANTITY, new_quantity > 0);
+        save_data(owner, customer, order_id, name, image, new_quantity, total_price, status);
+        return ();
+    }
+    
+    if (op == OP_UPDATE_PRICE) { ;; Update price (owner only)
+        throw_unless(ERROR_OWNER_ONLY, equal_slices(sender, owner));
+        int new_price = in_msg_body~load_coins();
+        throw_unless(ERROR_INVALID_PRICE, new_price > 0);
+        save_data(owner, customer, order_id, name, image, quantity, new_price, status);
+        return ();
+    }
+    
+    throw(0xffff); ;; Unsupported operation
+}
+
+;; Get methods
+(slice, slice, cell, cell, cell, int, int, int) get_order_info() method_id {
+        save_data(owner, customer, order_id, name, image, quantity, new_price, status);
+        return ();
+    }
+    
+    throw(0xffff); ;; Unsupported operation
+}
+
+;; Get methods
+(slice, slice, cell, cell, cell, int, int, int) get_order_info() method_id {
+    return load_data();
+}

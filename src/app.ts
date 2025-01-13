@@ -39,9 +39,11 @@ import {
 import TonWeb from "tonweb";
 import { Maybe } from "ton-core/dist/utils/maybe";
 import { Jetton } from "./scripts/jetton";
+import { DfoodContract } from "./scripts/deployOrderContract";
+import { OrderContractConfig } from "wrappers/OrderContract";
 dotenv.config();
 const app = express();
-const port = 3000;
+const port = 3001;
 app.use(
   cors({
     origin: "*",
@@ -81,6 +83,7 @@ app.get("/nft-address/:index", async (req: Request, res: Response) => {
 app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
   const data: Order = req.body;
   const address = req.params.address;
+  const orderId = req.query.order_id;
   const imagesFolderPath = path.join(__dirname, "../data/images");
 
   const dishes = data.orderItems.flatMap((orderItem, index) => {
@@ -103,7 +106,7 @@ app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
   // const image = `ipfs://${imagesIpfsHash}/dish.jpg`;
 
   const metaData = {
-    name: generateOrderId(),
+    name: orderId,
     description: "This is an order created on TON blockchain",
     attributes: [
       {
@@ -154,10 +157,10 @@ app.post("/deploy-collection", async (req: Request, res: Response) => {
 app.post("/send-jetton/:address", async (req: Request, res: Response) => {
   const address = req.params.address;
   const wallet = await getWallet();
-  await sleep(5000);
+  await sleep(3000);
   const seqno = await wallet.contract.getSeqno();
   console.log(seqno);
-  await sleep(5000);
+  await sleep(3000);
   console.log('haha')
   
   try {
@@ -217,6 +220,57 @@ app.post("/exchange-jetton/:address", async (req: Request, res: Response) => {
   // });
   // res.json({ message: "success" });
 });
+
+app.post("/deploy-order-contract",  async(req: Request, res: Response) => {
+  const wallet = await getWallet();
+  const orderData: Order = req.body;
+  const data: OrderContractConfig = {
+    owner: Address.parse("0QDREisYb3hWcNevBoAopiS2UubbDp174WF0_v2XSZd9gcwL"),
+    customer: wallet.contract.address,
+    order_id: generateOrderId(),
+    name: orderData.orderItems[0].dish.name,
+    image: orderData.orderItems[0].dish.imageUrl,
+    quantity: orderData.orderItems[0].quantity,
+    price: toNano(orderData.orderItems[0].dish.price),
+  }
+ 
+  const contract = new DfoodContract(data);
+  await contract.deploy(wallet);
+  res.json({ 
+    contract_address: contract.address.toString(),
+    order_id: data.order_id
+  });
+})
+
+app.post("/create-order-contract",  async(req: Request, res: Response) => {
+  const wallet = await getWallet();
+  const orderData: Order = req.body;
+  const order_id = req.query.order_id;
+  const owner = req.query.owner;
+  const customer = req.query.customer;
+  const data: OrderContractConfig = {
+    owner: wallet.contract.address,
+    customer: wallet.contract.address,
+    order_id: order_id as string,
+    name: orderData.orderItems[0].dish.name,
+    image: orderData.orderItems[0].dish.imageUrl,
+    quantity: orderData.orderItems[0].quantity,
+    price: toNano(orderData.orderItems[0].dish.price),
+  }
+ 
+  const contract = new DfoodContract(data);
+  await contract.createOrderContract(wallet, {
+    owner: Address.parse(owner as string),
+    customer: Address.parse(customer as string),
+    order_id: order_id as string,
+    name: orderData.orderItems[0].dish.name,
+    image: orderData.orderItems[0].dish.imageUrl,
+    quantity: orderData.orderItems[0].quantity,
+    price: toNano(orderData.orderItems[0].dish.price),
+    value: toNano('0.05'),
+});
+  res.json({ contractAddress: contract.address.toString() });
+})
 
 
 app.get("/", (req: Request, res: Response) => {
