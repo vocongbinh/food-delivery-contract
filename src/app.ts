@@ -41,6 +41,7 @@ import { Maybe } from "ton-core/dist/utils/maybe";
 import { Jetton } from "./scripts/jetton";
 import { DfoodContract } from "./scripts/deployOrderContract";
 import { OrderContractConfig } from "wrappers/OrderContract";
+import {queue} from './queue'
 dotenv.config();
 const app = express();
 const port = 3001;
@@ -81,60 +82,23 @@ app.get("/nft-address/:index", async (req: Request, res: Response) => {
 });
 
 app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
-  const data: Order = req.body;
+  const order: Order = req.body;
   const address = req.params.address;
   const orderId = req.query.order_id;
-  const imagesFolderPath = path.join(__dirname, "../data/images");
+  const data = {data: order, address, orderId}
+  try {
+    
+    // Thêm công việc vào hàng đợi
+    const job = await queue.add('my-job', data);
 
-  const dishes = data.orderItems.flatMap((orderItem, index) => {
-    return [
-      {
-      trait_type: "Quantity of " + orderItem.dish.name,
-      value: orderItem.quantity,
-    },
-    {
-      trait_type: "Unit Price of " + orderItem.dish.name,
-      value: orderItem.dish.price
-    }
-  ];
-  });
-  console.log("Started uploading images to IPFS...");
-  // const imagesIpfsHash = await uploadFolderToIPFS(imagesFolderPath);
-  const featuredImg = data.orderItems[0].dish.imageUrl.split(", ")[0];
-  const result = await uploadImageToFolder(featuredImg);
-  const image = `ipfs://${result}`;
-  // const image = `ipfs://${imagesIpfsHash}/dish.jpg`;
-
-  const metaData = {
-    name: orderId,
-    description: "This is an order created on TON blockchain",
-    attributes: [
-      {
-        trait_type: "Name",
-        value: data.name,
-      },
-      {
-        trait_type: "Address",
-        value: data.address,
-      },
-      {
-        trait_type: "Created At",
-        value: formatDate(new Date()),
-      },
-      {
-        trait_type: "Phone",
-        value: data.phone,
-      },
-      ...dishes,
-    ],
-    image,
-  };
-  const metaLink = await uploadMetadata(metaData);
-
-  console.log(metaData);
-  console.log("meta link: ", metaLink);
-  await deployItem(`${metaLink}`, address);
-  res.json({ message: "success" });
+    res.status(200).json({
+      message: 'Job added to the queue',
+      jobId: job.id,
+    });
+  } catch (err) {
+    console.error('Error adding job:', err);
+    res.status(500).json({ error: 'Failed to add job' });
+  }
 });
 app.post("/deploy-collection", async (req: Request, res: Response) => {
   const wallet = await getWallet();
@@ -223,15 +187,14 @@ app.post("/exchange-jetton/:address", async (req: Request, res: Response) => {
 
 app.post("/deploy-order-contract",  async(req: Request, res: Response) => {
   const wallet = await getWallet();
-  const orderData: Order = req.body;
   const data: OrderContractConfig = {
-    owner: Address.parse("0QDREisYb3hWcNevBoAopiS2UubbDp174WF0_v2XSZd9gcwL"),
+    owner: wallet.contract.address,
     customer: wallet.contract.address,
     order_id: generateOrderId(),
-    name: orderData.orderItems[0].dish.name,
-    image: orderData.orderItems[0].dish.imageUrl,
-    quantity: orderData.orderItems[0].quantity,
-    price: toNano(orderData.orderItems[0].dish.price),
+    name: '',
+    image: '',
+    quantity:0,
+    price: toNano(0),
   }
  
   const contract = new DfoodContract(data);
