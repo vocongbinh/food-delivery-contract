@@ -40,7 +40,7 @@ export class NftItem {
         ],
         sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
       });
-      await sleep(4000)
+      await sleep(8000)
       const nftAddress = await NftCollection.getNftAddressByIndex(params.itemIndex)
       console.log(nftAddress.toString())
       const newOwner = Address.parse(destAddress)
