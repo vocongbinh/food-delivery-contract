@@ -23,7 +23,7 @@ export class NftItem {
   // for (let attempt = 0; attempt < maxRetries; attempt++) {
   //   try {
       // Đợi seqno trả về
-      await sleep(1000)
+      await sleep(3000)
 
       const seqno = await wallet.contract.getSeqno();
       await sleep(3000)

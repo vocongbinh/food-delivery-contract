@@ -6,11 +6,11 @@ const redisUrl = 'rediss://red-cu2ifhpu0jms73d9icng:dbgs9sD1PB90NjiWGNvGyK0fJsYd
 const parsedUrl = new URL(redisUrl);
 
 const redis = new Redis({
-    host: parsedUrl.hostname,
-    port: Number(parsedUrl.port),
-    username: parsedUrl.username,
-    password: parsedUrl.password,
-    tls: parsedUrl.protocol === 'rediss:' ? {} : undefined,
+    host: 'oregon-redis.render.com',
+    port: 6379,
+    username: 'red-cu2ifhpu0jms73d9icng',
+    password: 'dbgs9sD1PB90NjiWGNvGyK0fJsYdEujj',
+    tls: {},
     maxRetriesPerRequest: null
 });
 const worker = new Worker('contract', async job => {
