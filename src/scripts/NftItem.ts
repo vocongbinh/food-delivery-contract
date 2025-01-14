@@ -40,7 +40,7 @@ export class NftItem {
         ],
         sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
       });
-      await sleep(3000)
+      await sleep(10000)
       const nftAddress = await NftCollection.getNftAddressByIndex(params.itemIndex)
       console.log(nftAddress.toString())
       const newOwner = Address.parse(destAddress)
@@ -122,7 +122,7 @@ export class NftItem {
     await sleep(3000)
     const seqno = await wallet.contract.getSeqno();
     console.log("seq", seqno)
-    await sleep(5000)
+    await sleep(3000)
     await wallet.contract.sendTransfer({
       seqno,
       secretKey: wallet.keyPair.secretKey,

@@ -83,11 +83,59 @@ app.get("/nft-address/:index", async (req: Request, res: Response) => {
 });
 
 app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
-  const order: Order = req.body;
+  const data: Order = req.body;
   const address = req.params.address;
   const orderId = req.query.order_id as string;
-  const data = {data: order, address, orderId}
-  await deployNFT(data)
+  // const data = {data: order, address, orderId}
+  const imagesFolderPath = path.join(__dirname, "../data/images");
+  const dishes = data.orderItems.flatMap((orderItem, index) => {
+    return [
+      {
+      trait_type: "Quantity of " + orderItem.dish.name,
+      value: orderItem.quantity,
+    },
+    {
+      trait_type: "Unit Price of " + orderItem.dish.name,
+      value: orderItem.dish.price
+    }
+  ];
+  });
+  console.log("Started uploading images to IPFS...");
+  // const imagesIpfsHash = await uploadFolderToIPFS(imagesFolderPath);
+  const featuredImg = data.orderItems[0].dish.imageUrl.split(", ")[0];
+  const result = await uploadImageToFolder(featuredImg);
+  const image = `ipfs://${result}`;
+  // const image = `ipfs://${imagesIpfsHash}/dish.jpg`;
+  const metaData = {
+    name: orderId,
+    description: "This is an order created on TON blockchain",
+    attributes: [
+      {
+        trait_type: "Name",
+        value: data.name,
+      },
+      {
+        trait_type: "Address",
+        value: data.address,
+      },
+      {
+        trait_type: "Created At",
+        value: formatDate(new Date()),
+      },
+      {
+        trait_type: "Phone",
+        value: data.phone,
+      },
+      ...dishes,
+    ],
+    image,
+  };
+  const metaLink = await uploadMetadata(metaData);
+  console.log(metaData);
+  console.log("meta link: ", metaLink);
+  await deployItem(`${metaLink}`, address);
+  res.json({ message: "success" });
+  // await deployNFT(data)
   // try {
     
   //   // Thêm công việc vào hàng đợi
