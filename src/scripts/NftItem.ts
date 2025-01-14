@@ -44,7 +44,15 @@ export class NftItem {
       const nftAddress = await NftCollection.getNftAddressByIndex(params.itemIndex)
       console.log(nftAddress.toString())
       const newOwner = Address.parse(destAddress)
-      await NftItem.transfer(wallet, nftAddress, newOwner)
+      try {
+
+       
+       const seq = await NftItem.transfer(wallet, nftAddress, newOwner)
+       console.log(seq)
+      }
+      catch(e) {
+        console.log("Error", e);
+      }
 
   //     console.log(`Transfer successful on attempt ${attempt + 1}`);
   //     return 0; // Nếu thành công, thoát khỏi hàm
@@ -114,7 +122,7 @@ export class NftItem {
     await sleep(3000)
     const seqno = await wallet.contract.getSeqno();
     console.log("seq", seqno)
-    await sleep(3000)
+    await sleep(5000)
     await wallet.contract.sendTransfer({
       seqno,
       secretKey: wallet.keyPair.secretKey,
