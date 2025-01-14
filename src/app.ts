@@ -41,7 +41,8 @@ import { Maybe } from "ton-core/dist/utils/maybe";
 import { Jetton } from "./scripts/jetton";
 import { DfoodContract } from "./scripts/deployOrderContract";
 import { OrderContractConfig } from "wrappers/OrderContract";
-import {queue} from './queue'
+// import {queue} from './queue'
+import { deployNFT } from "./jobs";
 dotenv.config();
 const app = express();
 const port = 3001;
@@ -84,21 +85,22 @@ app.get("/nft-address/:index", async (req: Request, res: Response) => {
 app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
   const order: Order = req.body;
   const address = req.params.address;
-  const orderId = req.query.order_id;
+  const orderId = req.query.order_id as string;
   const data = {data: order, address, orderId}
-  try {
+  await deployNFT(data)
+  // try {
     
-    // Thêm công việc vào hàng đợi
-    const job = await queue.add('my-job', data);
+  //   // Thêm công việc vào hàng đợi
+  //   const job = await queue.add('my-job', data);
 
-    res.status(200).json({
-      message: 'Job added to the queue',
-      jobId: job.id,
-    });
-  } catch (err) {
-    console.error('Error adding job:', err);
-    res.status(500).json({ error: 'Failed to add job' });
-  }
+  //   res.status(200).json({
+  //     message: 'Job added to the queue',
+  //     jobId: job.id,
+  //   });
+  // } catch (err) {
+  //   console.error('Error adding job:', err);
+  //   res.status(500).json({ error: 'Failed to add job' });
+  // }
 });
 app.post("/deploy-collection", async (req: Request, res: Response) => {
   const wallet = await getWallet();

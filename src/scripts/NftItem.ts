@@ -113,6 +113,7 @@ export class NftItem {
   ): Promise<number> {
     await sleep(3000)
     const seqno = await wallet.contract.getSeqno();
+    console.log("seq", seqno)
     await sleep(3000)
     await wallet.contract.sendTransfer({
       seqno,
