@@ -237,15 +237,17 @@ app.post("/exchange-jetton/:address", async (req: Request, res: Response) => {
 
 app.post("/deploy-order-contract",  async(req: Request, res: Response) => {
   const wallet = await getWallet();
+  console.log(req.params)
   const data: OrderContractConfig = {
-    owner: wallet.contract.address,
-    customer: wallet.contract.address,
+    owner: Address.parse(req.query.owner as string),
+    customer: Address.parse(req.query.customer as string),
     order_id: generateOrderId(),
-    name: '',
-    image: '',
-    quantity:0,
-    price: toNano(0),
+    name: req.query.name as string,
+    image: req.query.image as string,
+    quantity:Number(req.query.quantity),
+    price: toNano(Number(req.query.price)),
   }
+  console.log(data)
  
   const contract = new DfoodContract(data);
   await contract.deploy(wallet);

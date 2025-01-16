@@ -13,6 +13,7 @@ const int CANCELED = 3;
 const int OP_UPDATE_STATUS = 1;
 const int OP_UPDATE_QUANTITY = 2;
 const int OP_UPDATE_PRICE = 3;
+const int OP_FORWARD_TON = 4;
 
 ;; Error codes
 const int ERROR_NOT_AUTHORIZED = 101;
@@ -58,38 +59,40 @@ const int ERROR_INVALID_PRICE = 105;
 
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
     ;; Parse sender address
-    var cs = in_msg_full.begin_parse();
-    var flags = cs~load_uint(4);
-    var sender = cs~load_msg_addr();
-    
-    ;; Load contract data
-    var (owner, customer, order_id, name, image, quantity, total_price, status) = load_data();
-
-    ;; If contract is not initialized yet
-     if (equal_slices(customer, owner)) {
-        ;; Initialize contract data
-        slice new_owner = in_msg_body~load_msg_addr();
-        slice new_customer = sender;
-        cell new_order_id = in_msg_body~load_ref();
-        cell new_name = in_msg_body~load_ref();
-        cell new_image = in_msg_body~load_ref();
-        int new_quantity = in_msg_body~load_uint(32);
-        int new_price = in_msg_body~load_coins();
-        
-        ;; Validate inputs
-        throw_unless(ERROR_INVALID_QUANTITY, new_quantity > 0);
-        throw_unless(ERROR_INVALID_PRICE, new_price > 0);
-        
-        ;; Save initial data
-        save_data(new_owner, new_customer, new_order_id, new_name, new_image, new_quantity, new_price, PENDING);
+    if (in_msg_body.slice_empty?()) { ;; ignore empty messages
         return ();
     }
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+
+    if (flags & 1) { ;; ignore all bounced messages
+        return ();
+    }
+    var sender = cs~load_msg_addr();
+
+    ;; Load contract data
+    var (owner, customer, order_id, name, image, quantity, total_price, status) = load_data();
     
     ;; Check authorization for existing contract
     throw_unless(ERROR_NOT_AUTHORIZED, is_authorized(sender, owner, customer));
     
     ;; Parse op
     int op = in_msg_body~load_uint(32);
+
+    if (op == OP_FORWARD_TON) {
+        owner = in_msg_body~load_msg_addr();
+        var (owner, _, _, _, _, _, _, _) = load_data();
+        var forward_amount = msg_value - 0.05;
+        var msg = begin_cell()
+            .store_uint(0x18, 6)            ;; nobounce - 0, bounced - 0, src = 11000
+            .store_slice(owner)             ;; destination address
+            .store_coins(forward_amount)     ;; forward amount (10% of received)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1) ;; 107 bits header
+            .store_uint(0, 32)              ;; empty body
+            .end_cell();
+        
+        send_raw_message(msg, 1); ;; mode 1 to pay transfer fees from remaining balance
+    }
     
     ;; Handle operations
     if (op == OP_UPDATE_STATUS) { ;; Update status
