@@ -4,6 +4,7 @@ import { NftCollection, createMintBody, mintParams } from "./NftCollection";
 import { TonClient } from "ton";
 import { nextTick } from "process";
 import { StateInit } from "ton-core";
+import { Jetton } from "./jetton";
 
 export class NftItem {
   private collection: Address;
@@ -25,78 +26,88 @@ export class NftItem {
     destAddress: string
 
   ): Promise<number> {
-  //    const maxRetries = 100 ;
-  // const retryDelay = 10000; // 1 giây giữa mỗi lần thử lại
+    //    const maxRetries = 100 ;
+    // const retryDelay = 10000; // 1 giây giữa mỗi lần thử lại
 
-  // for (let attempt = 0; attempt < maxRetries; attempt++) {
-  //   try {
-      // Đợi seqno trả về
-      await sleep(2000)
+    // for (let attempt = 0; attempt < maxRetries; attempt++) {
+    //   try {
+    // Đợi seqno trả về
+    await sleep(2000)
 
-      const seqno = await wallet.contract.getSeqno();
-       await sleep(2000)
-      // Sau khi có seqno, gửi giao dịch
-      await wallet.contract.sendTransfer({
-        seqno,
-        secretKey: wallet.keyPair.secretKey,
-        messages: [
-          internal({
-            value: "0.05",
-            to: this.collection,
-            body: createMintBody(params),
+    const seqno = await wallet.contract.getSeqno();
+    await sleep(2000)
+    // Sau khi có seqno, gửi giao dịch
+    await wallet.contract.sendTransfer({
+      seqno,
+      secretKey: wallet.keyPair.secretKey,
+      messages: [
+        internal({
+          value: "0.05",
+          to: this.collection,
+          body: createMintBody(params),
+        }),
+        internal({
+          value: "0.05",
+          to: Address.parse("kQAoj7j8Sy0enWZcjy6Je7G_ixzlCh2QaCThAv67vOkEGAbk"),
+          body: Jetton.createTransferBody({
+            newOwner: Address.parse(destAddress),
+            amount: toNano(1),
+            forwardAmount: toNano(0.05),
+            responseTo: wallet.contract.address,
           }),
-        ],
-        sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
-      });
-      await sleep(6000)
-      // const stateInit: StateInit = {
-      //   data: createMintBody(params),
-      //   code: this.createCodeCell(),
-      // }
+        }),
+      ],
+      sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
+    });
+    await sleep(8000)
+    // const stateInit: StateInit = {
+    //   data: createMintBody(params),
+    //   code: this.createCodeCell(),
+    // }
 
-      // const nftAddres = contractAddress(0, stateInit)
-      // console.log("nft address", nftAddres.toString())
-      const nftAddress = await NftCollection.getNftAddressByIndex(params.itemIndex)
-      console.log(nftAddress.toString())
-      const newOwner = Address.parse(destAddress)
-      try {
+    // const nftAddres = contractAddress(0, stateInit)
+    // console.log("nft address", nftAddres.toString())
+    const nftAddress = await NftCollection.getNftAddressByIndex(params.itemIndex)
+    console.log(nftAddress.toString())
+    const newOwner = Address.parse(destAddress)
+    try {
 
-       
-       const seq = await NftItem.transfer(seqno + 1,wallet, nftAddress, newOwner)
-       console.log(seq)
-      }
-      catch(e) {
-        console.log("Error", e);
-      }
 
-  //     console.log(`Transfer successful on attempt ${attempt + 1}`);
-  //     return 0; // Nếu thành công, thoát khỏi hàm
+      const seq = await NftItem.transfer(seqno + 1, wallet, nftAddress, newOwner)
+      console.log(seq)
+    }
+    catch (e) {
+      console.log("Error", e);
+    }
 
-  //   } catch (e) {
-  //     if (e.response && e.response.status === 429) {
-  //       console.error(`Attempt ${attempt + 1} failed: Too many requests, retrying...`);
+    //     console.log(`Transfer successful on attempt ${attempt + 1}`);
+    //     return 0; // Nếu thành công, thoát khỏi hàm
 
-  //       // Đợi một thời gian trước khi thử lại nếu gặp lỗi 429
-  //       if (attempt < maxRetries - 1) {
-  //         await new Promise(resolve => setTimeout(resolve, retryDelay));
-  //       } else {
-  //         console.error(`Failed after ${maxRetries} attempts`);
-  //         return -1; // Trả về lỗi sau số lần thử tối đa
-  //       }
+    //   } catch (e) {
+    //     if (e.response && e.response.status === 429) {
+    //       console.error(`Attempt ${attempt + 1} failed: Too many requests, retrying...`);
 
-  //     } else {
-  //       console.error(`Attempt ${attempt + 1} failed:`, e);
-  //       return -1; // Nếu lỗi khác không phải 429, thoát với lỗi
-  //     }
-  //   }
-  // }
+    //       // Đợi một thời gian trước khi thử lại nếu gặp lỗi 429
+    //       if (attempt < maxRetries - 1) {
+    //         await new Promise(resolve => setTimeout(resolve, retryDelay));
+    //       } else {
+    //         console.error(`Failed after ${maxRetries} attempts`);
+    //         return -1; // Trả về lỗi sau số lần thử tối đa
+    //       }
 
- 
-  
+    //     } else {
+    //       console.error(`Attempt ${attempt + 1} failed:`, e);
+    //       return -1; // Nếu lỗi khác không phải 429, thoát với lỗi
+    //     }
+    //   }
+    // }
+
+
+
     return 0;
-    
 
-    
+
+
   }
   static async getAddressByIndex(
     collectionAddress: Address,
