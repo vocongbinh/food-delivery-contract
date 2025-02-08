@@ -24,7 +24,7 @@ import {
   uploadMetadata,
 } from "./metadata";
 import { readdir } from "fs/promises";
-import { formatDate, generateOrderId, openWallet, sleep } from "./utils";
+import { formatDate, generateOrderId, getNextItem, openWallet, sleep } from "./utils";
 import { NftCollection } from "./scripts/NftCollection";
 import { Address, beginCell, Cell, internal, SendMode, toNano } from "ton-core";
 import { Address as Address2, Sender } from "@ton/core";
@@ -130,10 +130,14 @@ app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
     ],
     image,
   };
-  const metaLink = await uploadMetadata(metaData);
-  console.log(metaData);
-  console.log("meta link: ", metaLink);
-  await deployItem(`${metaLink}`, address);
+  // const metaLink = await uploadMetadata(metaData);
+  // console.log(metaData);
+  // console.log("meta link: ", metaLink);
+  const [commonContentUrl, itemIndex] = await Promise.all([
+    uploadMetadata(metaData),
+    getNextItem(),
+  ])
+  await deployItem(commonContentUrl, itemIndex, address);
   res.json({ message: "success" });
   // await deployNFT(data)
   // try {
@@ -171,11 +175,10 @@ app.post("/deploy-collection", async (req: Request, res: Response) => {
 app.post("/send-jetton/:address", async (req: Request, res: Response) => {
   const address = req.params.address;
   const wallet = await getWallet();
-  await sleep(3000);
   const seqno = await wallet.contract.getSeqno();
-  console.log(seqno);
-  await sleep(3000);
-  console.log('haha')
+  // console.log(seqno);
+  await sleep(2000);
+  // console.log('haha')
   
   try {
     await wallet.contract.sendTransfer({

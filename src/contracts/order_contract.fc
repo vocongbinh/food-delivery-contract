@@ -1,5 +1,5 @@
 #include "imports/stdlib.fc";
-
+#include "imports/op-codes.fc";
 ;; Storage TL-B scheme
 ;; storage#_ owner:MsgAddressInt customer:MsgAddressInt order_id:^Cell name:^Cell image:^Cell quantity:uint32 total_price:Coins status:uint8 = Storage;
 
@@ -80,9 +80,8 @@ const int ERROR_INVALID_PRICE = 105;
     int op = in_msg_body~load_uint(32);
 
     if (op == OP_FORWARD_TON) {
-        owner = in_msg_body~load_msg_addr();
-        var (owner, _, _, _, _, _, _, _) = load_data();
-        var forward_amount = msg_value - 0.05;
+        slice owner = in_msg_body~load_msg_addr();
+        var forward_amount = msg_value - 50000000; ;; 0.05 TON in nanoTONs
         var msg = begin_cell()
             .store_uint(0x18, 6)            ;; nobounce - 0, bounced - 0, src = 11000
             .store_slice(owner)             ;; destination address
@@ -92,6 +91,7 @@ const int ERROR_INVALID_PRICE = 105;
             .end_cell();
         
         send_raw_message(msg, 1); ;; mode 1 to pay transfer fees from remaining balance
+        return ();
     }
     
     ;; Handle operations
@@ -114,15 +114,6 @@ const int ERROR_INVALID_PRICE = 105;
         throw_unless(ERROR_OWNER_ONLY, equal_slices(sender, owner));
         int new_price = in_msg_body~load_coins();
         throw_unless(ERROR_INVALID_PRICE, new_price > 0);
-        save_data(owner, customer, order_id, name, image, quantity, new_price, status);
-        return ();
-    }
-    
-    throw(0xffff); ;; Unsupported operation
-}
-
-;; Get methods
-(slice, slice, cell, cell, cell, int, int, int) get_order_info() method_id {
         save_data(owner, customer, order_id, name, image, quantity, new_price, status);
         return ();
     }

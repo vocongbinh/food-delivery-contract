@@ -1,8 +1,9 @@
-import { Address, beginCell, Cell, internal, SendMode, toNano } from "ton-core";
+import { Address, beginCell, Cell, internal, SendMode, toNano, contractAddress } from "ton-core";
 import { OpenedWallet, sleep } from "../utils";
 import { NftCollection, createMintBody, mintParams } from "./NftCollection";
 import { TonClient } from "ton";
 import { nextTick } from "process";
+import { StateInit } from "ton-core";
 
 export class NftItem {
   private collection: Address;
@@ -10,6 +11,13 @@ export class NftItem {
   constructor(collection: Address) {
     this.collection = collection;
   }
+
+  private createCodeCell(): Cell {
+    const NftItemCodeBoc =
+      "te6ccgECDQEAAdAAART/APSkE/S88sgLAQIBYgIDAgLOBAUACaEfn+AFAgEgBgcCASALDALXDIhxwCSXwPg0NMDAXGwkl8D4PpA+kAx+gAxcdch+gAx+gAw8AIEs44UMGwiNFIyxwXy4ZUB+kDUMBAj8APgBtMf0z+CEF/MPRRSMLqOhzIQN14yQBPgMDQ0NTWCEC/LJqISuuMCXwSED/LwgCAkAET6RDBwuvLhTYAH2UTXHBfLhkfpAIfAB+kDSADH6AIIK+vCAG6EhlFMVoKHeItcLAcMAIJIGoZE24iDC//LhkiGOPoIQBRONkchQCc8WUAvPFnEkSRRURqBwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7ABBHlBAqN1viCgBycIIQi3cXNQXIy/9QBM8WECSAQHCAEMjLBVAHzxZQBfoCFctqEssfyz8ibrOUWM8XAZEy4gHJAfsAAIICjjUm8AGCENUydtsQN0QAbXFwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7AJMwMjTiVQLwAwA7O1E0NM/+kAg10nCAJp/AfpA1DAQJBAj4DBwWW1tgAB0A8jLP1jPFgHPFszJ7VSA=";
+    return Cell.fromBase64(NftItemCodeBoc);
+  }
+
 
   public async deploy(
     wallet: OpenedWallet,
@@ -23,10 +31,10 @@ export class NftItem {
   // for (let attempt = 0; attempt < maxRetries; attempt++) {
   //   try {
       // Đợi seqno trả về
-      await sleep(3000)
+      await sleep(2000)
 
       const seqno = await wallet.contract.getSeqno();
-      await sleep(3000)
+       await sleep(2000)
       // Sau khi có seqno, gửi giao dịch
       await wallet.contract.sendTransfer({
         seqno,
@@ -40,14 +48,21 @@ export class NftItem {
         ],
         sendMode: SendMode.IGNORE_ERRORS + SendMode.PAY_GAS_SEPARATELY,
       });
-      await sleep(8000)
+      await sleep(6000)
+      // const stateInit: StateInit = {
+      //   data: createMintBody(params),
+      //   code: this.createCodeCell(),
+      // }
+
+      // const nftAddres = contractAddress(0, stateInit)
+      // console.log("nft address", nftAddres.toString())
       const nftAddress = await NftCollection.getNftAddressByIndex(params.itemIndex)
       console.log(nftAddress.toString())
       const newOwner = Address.parse(destAddress)
       try {
 
        
-       const seq = await NftItem.transfer(wallet, nftAddress, newOwner)
+       const seq = await NftItem.transfer(seqno + 1,wallet, nftAddress, newOwner)
        console.log(seq)
       }
       catch(e) {
@@ -115,14 +130,15 @@ export class NftItem {
     return msgBody.endCell();
   }
   static async transfer(
+    seqno: number,
     wallet: OpenedWallet,
     nftAddress: Address,
     newOwner: Address
   ): Promise<number> {
     await sleep(3000)
-    const seqno = await wallet.contract.getSeqno();
-    console.log("seq", seqno)
-    await sleep(3000)
+    // const seqno = await wallet.contract.getSeqno();
+    // console.log("seq", seqno)
+    // await sleep(3000)
     await wallet.contract.sendTransfer({
       seqno,
       secretKey: wallet.keyPair.secretKey,
