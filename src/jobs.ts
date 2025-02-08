@@ -56,6 +56,6 @@ export async function deployNFT(params: { data: Order, address: string, orderId:
 
     console.log(metaData);
     console.log("meta link: ", metaLink);
-    await deployItem(`${metaLink}`, address);
+    await deployItem(`${metaLink}`,BigInt(2), address);
     return {result: "success"};
 }
