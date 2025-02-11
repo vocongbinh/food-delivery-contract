@@ -86,6 +86,7 @@ app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
   const data: Order = req.body;
   const address = req.params.address;
   const orderId = req.query.order_id as string;
+  const contractAddress = req.query.contract_address as string;
   // const data = {data: order, address, orderId}
   const imagesFolderPath = path.join(__dirname, "../data/images");
   const dishes = data.orderItems.flatMap((orderItem, index) => {
@@ -125,6 +126,10 @@ app.post("/deploy-NFT/:address", async (req: Request, res: Response) => {
       {
         trait_type: "Phone",
         value: data.phone,
+      },
+      {
+        trait_type: "Contract Address",
+        value: contractAddress,
       },
       ...dishes,
     ],
